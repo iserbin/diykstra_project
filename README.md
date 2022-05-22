@@ -1,1 +1,1 @@
-# Test task implementation. Use "[A:B], [A:C], [B:C], [C:D], [D:E]" as source and build way from first to last.
+Test task implementation. Use "[A:B], [A:C], [B:C], [C:D], [D:E]" as source and build way from first to last.
