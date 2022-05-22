@@ -7,6 +7,7 @@ import java.util.*
 
 class MainViewModel : ViewModel() {
 
+    private var isSuccess: Boolean = false
     private val _textData = MutableLiveData<String>()
     val textData = _textData.asLiveData()
     private lateinit var queue: PriorityQueue<Node>
@@ -14,12 +15,14 @@ class MainViewModel : ViewModel() {
     private val resultList = mutableListOf<Node>()
 
     init {
-        doWork()
+        renderResult(doWork(source))
     }
 
-    private fun doWork() {
-        with(source.parse()) {
-            if (isEmpty()) noWay() else {
+    fun doWork(s: String): String {
+        resultList.clear()
+        isSuccess = false
+        with(s.parse()) {
+            return if (isEmpty()) "" else {
                 with(get(0)) {
                     weight = 0
                     weights[name] = weight
@@ -29,40 +32,38 @@ class MainViewModel : ViewModel() {
                 while (queue.isNotEmpty()) {
                     queue.poll()?.process(this)
                 }
-                lastOrNull()?.let {
-                    resultList.add(it)
-                    goToPreviousRecursively(it)
+                lastOrNull()?.let { last ->
+                    firstOrNull()?.let { first ->
+                        resultList.add(last)
+                        goToPreviousRecursively(last, first)
+                    }
                 }
-                if (resultList.isEmpty()) noWay() else renderResult()
+                val empty = resultList.isEmpty()
+                if (empty || !isSuccess) "" else renderResultString()
             }
         }
     }
 
-    private fun renderResult() {
-        StringBuilder().apply {
-            append("Result way:\n")
-            resultList.asReversed().forEachIndexed { index, node ->
-                if (index == resultList.size - 1) {
-                    append(node.name)
-                } else {
-                    append("${node.name} -> ")
-                }
-            }
-        }.toString().let { _textData.value = it }
+    private fun renderResultString() = StringBuilder().apply {
+        resultList.asReversed().forEach { append(it.name) }
+    }.toString()
+
+    private fun renderResult(s: String) {
+        _textData.value = s.ifBlank { "No way found" }
     }
 
-    private fun noWay() {
-        _textData.value = "No way found"
-    }
-
-    private fun List<Node>.goToPreviousRecursively(node: Node?) {
-        if (node != null) {
-            val previous = node.previous
+    private fun List<Node>.goToPreviousRecursively(last: Node?, first: Node) {
+        if (last == first) {
+            isSuccess = true
+            return
+        }
+        if (last != null) {
+            val previous = last.previous
             previous?.let {
                 find { it.name == previous }
                     ?.let { nodePrevious ->
                         resultList.add(nodePrevious)
-                        goToPreviousRecursively(nodePrevious)
+                        goToPreviousRecursively(nodePrevious, first)
                     }
             }
         }
